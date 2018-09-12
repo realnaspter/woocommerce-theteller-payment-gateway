@@ -146,7 +146,6 @@ function woocommerce_theteller_init() {
         protected function get_theteller_args($order) {
             global $woocommerce;
 
-            //$order = new WC_Order($order_id);
             //$txnid = $order->id . '_' . date("ymds");
             $txnid = $order_id.'00'.date("ymds");
 
@@ -181,12 +180,13 @@ global $woocommerce;
 //Getting settings...
 $merchantname = $this->merchant_name;
 $merchantid = $this->merchant_id; 
-$api_base_url = $this->api_base_url;        
+$api_base_url = $this->api_base_url;       
 $apiuser = $this->apiuser; 
 $apikey = $this->apikey; 
 $order = new WC_Order($order_id);
 $amount = $order->total;
 $customer_email = $order->billing_email;
+
 $redirect_url = $woocommerce->cart->get_checkout_url().'?order_id='.$order_id.'&theteller_response';
 
          //Convert amount to minor float..
@@ -219,83 +219,80 @@ for($i = 1;$i <= 12; $i++){
 } 
 
 
-//Theteller Checkout Api Payload...
-    $data = array(
-    "merchant_id" => $merchantid,
-    "transaction_id" => $transaction_id,
-    "desc" => "Payment  to ".$merchantname."",
-    "amount" => $minor,
-    "email" =>$customer_email,
-    "redirect_url" => $redirect_url
+
+
+//Payload to send to API...
+$postdata = array(
+    'body' => array(
+    "merchant_id"  => $merchantid,
+    'transaction_id'  => $transaction_id,
+    'desc'  => "Payment  to ".$merchantname."",
+    'amount'  => $minor,
+    'email' =>$customer_email,
+    'redirect_url'  => $redirect_url,
+),
+    'timeout' => '60',
+    'redirection' => '5',
+    'httpversion' => '1.0',
+    'blocking' => true,
+    'sslverify' => true,
+    'headers' => array( 
+    'Content-Type' => 'application/json; charset=UTF-8',
+    'cache-control' => 'no-cache',
+    'Expect' => '',
+    'Authorization' => 'Basic '.base64_encode($apiuser.':'.$apikey).'' 
+  ), 
+    
 );
 
 
-//Encoding playload...
-$json_data = json_encode($data);
+//Making Request...
+$response = wp_remote_post($api_base_url, $postdata);
 
-//Api base URL...
- $url = $api_base_url;                                                                                                            
-// Initialization of the request
-$curl = curl_init();
+//Decoding response...
+$response_data = json_decode($response['body'], true);
 
-// Definition of request's headers
-curl_setopt_array($curl, array(
-  CURLOPT_URL => $url,
-  CURLOPT_RETURNTRANSFER => true,
-  CURLOPT_SSL_VERIFYHOST => false,
-  CURLOPT_SSL_VERIFYPEER => false,
-  CURLOPT_ENCODING => "json",
-  CURLOPT_MAXREDIRS => 10,
-  CURLOPT_TIMEOUT => 30,
-  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-  CURLOPT_CUSTOMREQUEST => "POST",
-  CURLOPT_HTTPHEADER => array(
-    "Authorization: Basic ".base64_encode($apiuser.':'.$apikey)."",
-    "cache-control: no-cache",
-    "content-type: application/json; charset=UTF-8",
-    
-  ),
-   CURLOPT_POSTFIELDS => $json_data,
-));
 
-// Send request and show response
-$response = curl_exec($curl);
-$err = curl_error($curl);
+//Checking if error
+if ( is_wp_error($response) ) {
+        $error_message = $response->get_error_message();
+        echo $error_message;
+    }
+   // print_r($response_data);
+   // exit();
 
-curl_close($curl);
 
-if ($err) {
-  //echo "API Error #:" . $err;
-    //Api error if any...
-     return $redirect_url . "&theteller-error-notice=" . $err;
-} else {
+// //Getting Response...
+    $status = $response_data['status'];
+    $code = $response_data['code'];
+    $reason = $response_data['reason'];
+    $token = $response_data['token'];
+    $description = $response_data['description'];
+    $checkout_url = $response_data['checkout_url'];
+
 
   
-    $response = json_decode($response, true);
-    //var_dump($response);
-    //exit();
-    //Getting Response...
-    $status = $response['status'];
-    $code = $response['code'];
-    $reason = $response['reason'];
-    $token = $response['token'];
-    $checkout_url = $response['checkout_url'];
-
-    if($status == "success" && $code == "200" && $token !="")
+  if($status == "success" && $code == "200" && $token !="")
     { 
       //Redirect to checkout page...
      //header('Location: '.$checkout_url.'');
         return $checkout_url;
-      exit;
+        exit;
 
     }
+
     else
-    {   
-       // die($reason);
-        return $redirect_url . "&theteller-response-notice=" .json_encode($response, true);
+    {
+        return $redirect_url . "&theteller-response-notice=" .$description;
     }
-  }
-  }  
+
+ 
+
+
+  }//end of send_request_to_theteller_api()...
+
+
+
 
 
         //Processing payment...
@@ -348,14 +345,14 @@ if ($err) {
             $transaction_id = isset($_REQUEST["transaction_id"]) ? $_REQUEST["transaction_id"] : "";
             $reason = isset($_REQUEST["reason"]) ? $_REQUEST["reason"] : "";
 
-            if($order->status == 'processing' || $order->status == 'pending payment'){
- 
-                                
             if($theteller != "")
             {
                  die("<h2 style=color:red>Not a valid request !</h2>");
             }
 
+             if($order->status == 'processing' || $order->status == 'pending payment'){
+
+            
             if ($order_id !='' && $code !=''  && $transaction_id !='' && $reason !='') {
 
                  
@@ -459,10 +456,11 @@ if ($err) {
                 // wp_redirect($redirect_url);
                 }
             }
-                 else
-                 {   
-                     die("<h2 style=color:red>Not a valid request !</h2>")
-                }
+
+                // else
+                // {   
+                //     die("<h2 style=color:red>Not a valid request !</h2>")
+                // }
 
               
             }
