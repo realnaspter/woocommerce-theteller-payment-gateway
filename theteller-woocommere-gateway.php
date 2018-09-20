@@ -348,12 +348,13 @@ if ( is_wp_error($response) ) {
                  die("<h2 style=color:red>Not a valid request !</h2>");
             }
 
+
             $wc_order_id = WC()->session->get('theteller_wc_oder_id');
             $order = new WC_Order($wc_order_id);
              if($order->status == 'pending' || $order->status == 'processing'){
 
             
-            if ($order_id !='' && $code !=''  && $transaction_id !='' && $reason !='') {
+            if ($order_id !='' && $code !=''  && $transaction_id !='') {
 
                  
                
@@ -392,7 +393,7 @@ if ( is_wp_error($response) ) {
                 if ($wc_order_id != '' && $wc_transaction_id !='') {
 
                     try {
-                                               
+                                             
                         if($code =="000")
                         {   
                             
@@ -418,20 +419,66 @@ if ( is_wp_error($response) ) {
 
                          if($code =="900")
                         {   
-                             die("we are in 900 response");
+                             //die("we are in 900 response");
+                            $order->payment_complete();
+                                $order->update_status('failed');
+                                $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: Transaction declined');
+                               
+                                //$woocommerce->cart->empty_cart();
+                               // $redirect_url = $this->get_return_url($order);
+                                 $redirect_url = $woocommerce->cart->get_checkout_url();
+                                $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
+                                 WC()->session->__unset('theteller_wc_hash_key');
+                        WC()->session->__unset('theteller_wc_order_id');
+                        WC()->session->__unset('theteller_wc_transaction_id');
+                        wp_redirect($redirect_url);
+                        exit;
+                                
+
+                        }
+
+                        if($code =="100")
+                        {   
+                            // die("we are in 100 response");
                             $message = "Thank you for shopping with us. However, 
-                                    the transaction could not be completed.";
+                                    the transaction has been declined.";
                                 $message_type = "error";
-                                $order->add_order_note('Theteller status code : '.$code.'<br /> Reason: '.$reason.' Transaction ID : '.$wc_transaction_id.'');
-                                $redirect_url = $order->get_cancel_order_url();
+                               
+                                
+                                 $order->payment_complete();
+                                $order->update_status('failed');
+                                $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: Transaction declined');
+                               
+                                //$woocommerce->cart->empty_cart();
+                               // $redirect_url = $this->get_return_url($order);
+                                 $redirect_url = $woocommerce->cart->get_checkout_url();
+                                $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
+                                 WC()->session->__unset('theteller_wc_hash_key');
+                        WC()->session->__unset('theteller_wc_order_id');
+                        WC()->session->__unset('theteller_wc_transaction_id');
+                        wp_redirect($redirect_url);
+                        exit;
+
                         }
 
                         else {
                                    
                                     $message = "Thank you for shopping with us. However, the transaction failed.";
                                     $message_type = "error";
-                                    $order->add_order_note('Theteller Status code : '.$code.'<br /> Reason: '.$reason.' Transaction ID : '.$wc_transaction_id.'');
-                                    $redirect_url = $order->get_cancel_order_url();
+                                   
+                                   $order->payment_complete();
+                                $order->update_status('failed');
+                                $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: '.$reason.'');
+                               
+                                $woocommerce->cart->empty_cart();
+                                $redirect_url = $this->get_return_url($order);
+                                $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
+                                 WC()->session->__unset('theteller_wc_hash_key');
+                        WC()->session->__unset('theteller_wc_order_id');
+                        WC()->session->__unset('theteller_wc_transaction_id');
+                        wp_redirect($redirect_url);
+                        exit;
+
                                 }
 
                       
