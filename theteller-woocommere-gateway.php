@@ -61,7 +61,7 @@ function woocommerce_theteller_init() {
 
 
             if (isset($_REQUEST["order_id"]) && isset($_REQUEST["transaction_id"])) {
-
+                
                //Check Theteller API Response...
                 $this->check_theteller_response();
 
@@ -223,21 +223,21 @@ for($i = 1;$i <= 12; $i++){
 
 //Payload to send to API...
 $postdata = array(
-    'body' => array(
+    'body' => json_encode(array(
     "merchant_id"  => $merchantid,
     'transaction_id'  => $transaction_id,
     'desc'  => "Payment  to ".$merchantname."",
     'amount'  => $minor,
     'email' =>$customer_email,
     'redirect_url'  => $redirect_url,
-),
+)),
     'timeout' => '60',
     'redirection' => '5',
     'httpversion' => '1.0',
     'blocking' => true,
     'sslverify' => true,
     'headers' => array( 
-    'Content-Type' => 'application/json; charset=UTF-8',
+    'Content-Type' => 'application/json',
     'cache-control' => 'no-cache',
     'Expect' => '',
     'Authorization' => 'Basic '.base64_encode($apiuser.':'.$apikey).'' 
@@ -258,9 +258,7 @@ if ( is_wp_error($response) ) {
         $error_message = $response->get_error_message();
         echo $error_message;
     }
-   // print_r($response_data);
-   // exit();
-
+  
 
 // //Getting Response...
     $status = $response_data['status'];
@@ -350,17 +348,19 @@ if ( is_wp_error($response) ) {
                  die("<h2 style=color:red>Not a valid request !</h2>");
             }
 
-             if($order->status == 'processing' || $order->status == 'pending payment'){
+            $wc_order_id = WC()->session->get('theteller_wc_oder_id');
+            $order = new WC_Order($wc_order_id);
+             if($order->status == 'pending' || $order->status == 'processing'){
 
             
             if ($order_id !='' && $code !=''  && $transaction_id !='' && $reason !='') {
 
                  
-                $wc_order_id = WC()->session->get('theteller_wc_oder_id');
+               
                 $wc_transaction_id = WC()->session->get('theteller_wc_transaction_id');
                 $hash = WC()->session->get('theteller_wc_hash_key');
-                $order = new WC_Order($wc_order_id);
-
+                
+                
                  if($order_id != $wc_order_id)
             {
 
@@ -372,7 +372,7 @@ if ( is_wp_error($response) ) {
                             $redirect_url = $order->get_cancel_order_url();
                             wp_redirect($redirect_url);
                             exit;
-               // die("<h2 style=color:red>Code 0001 : Data has been tampered !</h2>")
+               
             }
 
              if($transaction_id != $wc_transaction_id)
@@ -386,7 +386,7 @@ if ( is_wp_error($response) ) {
                             $redirect_url = $order->get_cancel_order_url();
                             wp_redirect($redirect_url);
                             exit;
-                //die("<h2 style=color:red>Code 0002 :Data has been tampered !</h2>")
+                
             }
 
                 if ($wc_order_id != '' && $wc_transaction_id !='') {
@@ -395,7 +395,7 @@ if ( is_wp_error($response) ) {
                                                
                         if($code =="000")
                         {   
-                            //die("we are in 000 response");
+                            
                              $message = "Thank you for shopping with us. 
                                 Your transaction was succssful, payment has been received. 
                                 You order is currently being processed. 
@@ -405,7 +405,7 @@ if ( is_wp_error($response) ) {
                                 $order->payment_complete();
                                 $order->update_status('completed');
                                 $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: '.$reason.'');
-                                //$order->add_order_note($this->msg['message']);
+                               
                                 $woocommerce->cart->empty_cart();
                                 $redirect_url = $this->get_return_url($order);
                                 $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
@@ -452,17 +452,11 @@ if ( is_wp_error($response) ) {
                         wp_redirect($redirect_url);
                         exit;
                     }
-                //       $redirect_url = get_permalink(get_option('woocommerce_myaccount_page_id')) . "&view-order=" . $order_id;
-                // wp_redirect($redirect_url);
+              
                 }
             }
 
-                // else
-                // {   
-                //     die("<h2 style=color:red>Not a valid request !</h2>")
-                // }
-
-              
+               
             }
             
         }
