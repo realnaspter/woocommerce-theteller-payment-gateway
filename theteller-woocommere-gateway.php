@@ -67,7 +67,7 @@ function woocommerce_theteller_init() {
 
             }
 
-            //add_action('init', array(&$this, 'check_theteller_response'));
+
             if (version_compare(WOOCOMMERCE_VERSION, '2.0.0', '>=')) {
                 add_action('woocommerce_update_options_payment_gateways_' . $this->id, array(&$this, 'process_admin_options'));
             } else {
@@ -143,36 +143,8 @@ function woocommerce_theteller_init() {
                 echo wpautop(wptexturize($this->description));
         }
 
-        protected function get_theteller_args($order) {
-            global $woocommerce;
-
-            //$txnid = $order->id . '_' . date("ymds");
-            $txnid = $order_id.'00'.date("ymds");
-
-            $redirect_url = $woocommerce->cart->get_checkout_url();
-
-            $productinfo = "Order: " . $order->id;
-
-            $str = "$this->clientid|$txnid|$order->order_total|$productinfo|$order->billing_first_name|$order->billing_email|||||||||||$this->clientuser|$this->clientsecret";
-        $hash = hash('sha512', $str);
-
-        $theteller_args = array(
-          'txnid' => $txnid,
-          'amount' => $order->order_total,
-          'itemname' => $productinfo,
-          'clientref' => $order_id,
-          'returnurl' => $this->redirect_url,          
-          'hash' => $hash
-          );
-          
-
-            WC()->session->set('theteller_wc_hash_key', $hash);
-
-            
-            apply_filters('woocommerce_theteller_args', $theteller_args, $order);
-            return $theteller_args;
-        }
-
+       
+//Sending Request to Theteller API...
 function send_request_to_theteller_api($order_id) {
             
 global $woocommerce;
@@ -187,6 +159,7 @@ $order = new WC_Order($order_id);
 $amount = $order->total;
 $customer_email = $order->billing_email;
 
+
 $redirect_url = $woocommerce->cart->get_checkout_url().'?order_id='.$order_id.'&theteller_response';
 
          //Convert amount to minor float..
@@ -196,15 +169,12 @@ $redirect_url = $woocommerce->cart->get_checkout_url().'?order_id='.$order_id.'&
         
         $zeros = 12 - strlen($number);
         $padding = '';
-        //Log::info('The number of zeros to use is '.$zeros);
         for($i=0; $i<$zeros; $i++) {
             $padding .= '0';
         }
-        //Log::info('Padding is '.$padding);
         $minor = $padding.$number;
     }
     if(strlen($amount)==12) {
-        //Received an actual minor unit
         $minor = $amount;
 
     }
@@ -219,7 +189,12 @@ for($i = 1;$i <= 12; $i++){
 } 
 
 
-
+//Hashing order details...
+$key_options = $merchantid.$transaction_id.$amount.$customer_email;
+$theteller_wc_hash_key = hash('sha512', $key_options);
+WC()->session->set('theteller_wc_hash_key', $theteller_wc_hash_key);
+//die($theteller_wc_hash_key);
+          
 
 //Payload to send to API...
 $postdata = array(
@@ -259,21 +234,67 @@ if ( is_wp_error($response) ) {
         echo $error_message;
     }
   
+//Getting Response...
+     if (!isset($response_data['code'])) {
+    $response_data['code'] = null;
+        }
 
-// //Getting Response...
-    $status = $response_data['status'];
-    $code = $response_data['code'];
-    $reason = $response_data['reason'];
-    $token = $response_data['token'];
-    $description = $response_data['description'];
-    $checkout_url = $response_data['checkout_url'];
+        else
+        {
+            $code = $response_data['code'];
+        }
 
+    if (!isset($response_data['status'])) {
+    $response_data['status'] = null;
+        }
+
+        else
+        {
+            $status = $response_data['status'];
+        }
+
+
+ if (!isset($response_data['reason'])) {
+    $response_data['reason'] = null;
+        }
+
+        else
+        {
+            $reason = $response_data['reason'];
+        }
+
+         if (!isset($response_data['token'])) {
+    $response_data['token'] = null;
+        }
+
+        else
+        {
+            $token = $response_data['token'];
+        }
+
+         if (!isset($response_data['description'])) {
+    $response_data['description'] = null;
+        }
+
+        else
+        {
+            $description = $response_data['description'];
+        }
+
+        if (!isset($response_data['checkout_url'])) {
+    $response_data['checkout_url'] = null;
+        }
+
+        else
+        {
+            $checkout_url = $response_data['checkout_url'];
+        }
 
   
   if($status == "success" && $code == "200" && $token !="")
     { 
+
       //Redirect to checkout page...
-     //header('Location: '.$checkout_url.'');
         return $checkout_url;
         exit;
 
@@ -288,9 +309,6 @@ if ( is_wp_error($response) ) {
 
 
   }//end of send_request_to_theteller_api()...
-
-
-
 
 
         //Processing payment...
@@ -359,7 +377,12 @@ if ( is_wp_error($response) ) {
                  
                
                 $wc_transaction_id = WC()->session->get('theteller_wc_transaction_id');
-                $hash = WC()->session->get('theteller_wc_hash_key');
+                $theteller_wc_hash_key = WC()->session->get('theteller_wc_hash_key');
+
+                if(empty($theteller_wc_hash_key))
+                {
+                    die("<h2 style=color:red>Ooups ! something went wrong </h2>");
+                }
                 
                 
                  if($order_id != $wc_order_id)
@@ -419,13 +442,12 @@ if ( is_wp_error($response) ) {
 
                          if($code =="900")
                         {   
-                             //die("we are in 900 response");
+                             
                             $order->payment_complete();
                                 $order->update_status('failed');
                                 $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: Transaction declined');
                                
-                                //$woocommerce->cart->empty_cart();
-                               // $redirect_url = $this->get_return_url($order);
+                              
                                  $redirect_url = $woocommerce->cart->get_checkout_url();
                                 $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
                                  WC()->session->__unset('theteller_wc_hash_key');
@@ -439,7 +461,7 @@ if ( is_wp_error($response) ) {
 
                         if($code =="100")
                         {   
-                            // die("we are in 100 response");
+                           
                             $message = "Thank you for shopping with us. However, 
                                     the transaction has been declined.";
                                 $message_type = "error";
@@ -449,8 +471,7 @@ if ( is_wp_error($response) ) {
                                 $order->update_status('failed');
                                 $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: Transaction declined');
                                
-                                //$woocommerce->cart->empty_cart();
-                               // $redirect_url = $this->get_return_url($order);
+                              
                                  $redirect_url = $woocommerce->cart->get_checkout_url();
                                 $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
                                  WC()->session->__unset('theteller_wc_hash_key');
@@ -463,8 +484,8 @@ if ( is_wp_error($response) ) {
 
                         else {
                                    
-                                    $message = "Thank you for shopping with us. However, the transaction failed.";
-                                    $message_type = "error";
+        $message = "Thank you for shopping with us. However, the transaction failed.";
+        $message_type = "error";
                                    
                                    $order->payment_complete();
                                 $order->update_status('failed');
@@ -482,13 +503,12 @@ if ( is_wp_error($response) ) {
                                 }
 
                       
-
                         $notification_message = array(
                             'message' => $message,
                             'message_type' => $message_type
                         );
                         if (version_compare(WOOCOMMERCE_VERSION, "2.2") >= 0) {
-                            add_post_meta($wc_order_id, '_theteller_hash', $hash, true);
+                            add_post_meta($wc_order_id, '_theteller_hash', $theteller_wc_hash_key, true);
                         }
                         update_post_meta($wc_order_id, '_theteller_wc_message', $notification_message);
 
