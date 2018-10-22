@@ -4,7 +4,7 @@ Tags: woocommerce, payment gateway, payment gateways, Theteller,PaySwitch, paysw
 Author URI: https://perfectplusventures.com
 Author: Marc D Christopher AHOURE
 Requires at least: 2.3
-Tested up to: 4.9
+Tested up to: 5.0
 Stable tag: 1.0
 Version: 1.0 
 Requires PHP: 5.5 or Higher
@@ -39,8 +39,8 @@ This plugin currently only allows Ghana Cedi currency and is meant to be used by
 = Automatic Installation =
 •	Login to your WordPress Admin area
 •	Go to “Plugins > Add New” from the left hand menu
-•	In the search box type “woocommerce theteller payment gateway”
-•	From the search result you will see “WooCommerce PaySwitch Theteller Payment Gateway” click on “Install Now” to install the plugin
+•	In the search box type “theteller woocommerce payment gateway”
+•	From the search result you will see “PaySwitch Theteller WooCommerce Payment Gateway” click on “Install Now” to install the plugin
 •	A popup window will ask you to confirm your wish to install the Plugin.
 
 
