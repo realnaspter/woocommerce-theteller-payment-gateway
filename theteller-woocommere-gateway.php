@@ -443,7 +443,6 @@ if ( is_wp_error($response) ) {
                          if($code =="900")
                         {   
                              
-                            $order->payment_complete();
                                 $order->update_status('failed');
                                 $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: Transaction declined');
                                
@@ -467,7 +466,6 @@ if ( is_wp_error($response) ) {
                                 $message_type = "error";
                                
                                 
-                                 $order->payment_complete();
                                 $order->update_status('failed');
                                 $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: Transaction declined');
                                
@@ -487,7 +485,6 @@ if ( is_wp_error($response) ) {
         $message = "Thank you for shopping with us. However, the transaction failed.";
         $message_type = "error";
                                    
-                                   $order->payment_complete();
                                 $order->update_status('failed');
                                 $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: '.$reason.'');
                                
