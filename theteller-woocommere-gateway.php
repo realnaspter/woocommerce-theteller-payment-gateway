@@ -4,7 +4,7 @@
 Plugin Name: WooCommerce PaySwitch Theteller Payment Gateway
 Plugin URI: https://wordpress.org/plugins/woocommerce-theteller-payment-gateway/
 Description: PaySwitch Theteller Payment gateway for woocommerce
-Version: 1.0
+Version: 2.0
 Author: Marc D Christopher AHOURE
 Author URI: https://perfectplusventures.com
 */
@@ -40,7 +40,15 @@ function woocommerce_theteller_init() {
             $this->apiuser = $this->settings['apiuser'];
             $this->apikey = $this->settings['apikey'];
             $this->go_live = $this->settings['go_live'];
+            $this->theteller_smpp = $this->settings['theteller_smpp'];
+            $this->smpp_user = $this->settings['smpp_user'];
+            $this->smpp_password = $this->settings['smpp_password'];
+            $this->smpp_sender = $this->settings['smpp_sender'];
+            $this->currency = $this->settings['currency'];
+            $this->channel = $this->settings['channel'];
 
+
+            //Checking for live environment..
             if ($this->settings['go_live'] == "yes") {
                 $this->api_base_url = 'https://prod.theteller.net/checkout/initiate';
                
@@ -67,7 +75,7 @@ function woocommerce_theteller_init() {
 
             }
 
-
+            //check for at least Woocommerce 2.0...
             if (version_compare(WOOCOMMERCE_VERSION, '2.0.0', '>=')) {
                 add_action('woocommerce_update_options_payment_gateways_' . $this->id, array(&$this, 'process_admin_options'));
             } else {
@@ -75,6 +83,7 @@ function woocommerce_theteller_init() {
             }
         }
 
+        //Iniatialization of config form...
         function init_form_fields() {
             $this->form_fields = array(
 
@@ -86,7 +95,7 @@ function woocommerce_theteller_init() {
 
                 'go_live' => array(
           'title'       => __( 'Go Live', 'theteller' ),
-          'label'       => __( 'Switch to live environment', 'client' ),
+          'label'       => __( 'Check to live environment', 'client' ),
           'type'        => 'checkbox',
           'description' => __( 'Ensure that you have all your credentials details set.', 'client' ),
           'default'     => 'no',
@@ -94,43 +103,91 @@ function woocommerce_theteller_init() {
         ),
                 
                 'title' => array(
-                    'title' => __('Title:', 'theteller'),
+                    'title' => __('Title', 'theteller'),
                     'type' => 'text',
                     'description' => __('This controls the title which the user sees during checkout.', 'theteller'),
+                    'disabled' =>true,
+                    'placeholder' =>'Theteller',
                     'default' => __('Theteller', 'theteller')),
 
                 'description' => array(
-                    'title' => __('Description:', 'theteller'),
+                    'title' => __('Description', 'theteller'),
                     'type' => 'textarea',
                    'description' => __('This controls the description which the user sees during checkout.', 'client'),
+                   'disabled' =>true,
+                   'placeholder'=> 'Pay securely by Credit , Debit card or Mobile Money through PaySwitch Theteller Checkout',
                     'default' => __('Pay securely by Credit , Debit card or Mobile Money through PaySwitch Theteller Checkout.', 'client')),
 
+                'currency' => array(
+                    'title' => __('Currency', 'theteller'),
+                    'type' => 'select',
+                    'options' => array('GHS','USD','EURO','GBP'),
+                   'description' => __('Select your currency. Default is : GHS', 'client')),
+
+                 
+                'channel' => array(
+                    'title' => __('Channel', 'theteller'),
+                    'type' => 'select',
+                    'options' => array('Card Only','Mobile Money Only','Both'),
+                   'description' => __('Select channel that you want to allow on the checkout page. Default is : Both ', 'client')),
+
+
+
                 'merchant_name' => array(
-                    'title' => __('Merchant Name or Shop name or Company Name ', 'theteller'),
+                    'title' => __('Merchant Name / Shop name / Company Name ', 'theteller'),
                     'type' => 'text',
-                    'description' => __('This Merchant name will be display to  user during payment .')),
+                   'description' => __('This will be use for the payment description. ')),
+
 
                 'merchant_id' => array(
                     'title' => __('Merchant ID', 'theteller'),
                     'type' => 'text',
-                    'description' => __('This Merchant ID Given to Merchant by PaySwitch.')),
+                    'description' => __('Merchant ID given during registration.')),
 
                 'apiuser' => array(
                     'title' => __('API User', 'theteller'),
                     'type' => 'text',
-                    'description' => __('API User given to Merchant by PaySwitch', 'theteller')),
+                    'description' => __('API User given during registration.', 'theteller')),
 
                 'apikey' => array(
                     'title' => __('API Key', 'theteller'),
                     'type' => 'text',
-                    'description' => __('API Key given to Merchant by PaySwitch', 'theteller'))
-                        );
+                    'description' => __('API Key given during registration.', 'theteller')
+                ),
+                        
+
+             'theteller_smpp' => array(
+          'title'       => __( 'Enable/Disable Theteller SMS', 'theteller' ),
+          'type'        => 'checkbox',
+          'description' => __( 'This feature allows you to send SMS to customer after successful purchase. Ensure that you have all your credentials details set.', 'client' ),
+          'default'     => 'no',
+        ),
+
+        'smpp_user' => array(
+                    'title' => __('SMS UserID', 'theteller'),
+                    'type' => 'text',
+                    'description' => __('SMS API User given to Merchant by Theteller SMPP', 'theteller')
+                ),
+
+        'smpp_password' => array(
+                    'title' => __('SMS UserPass', 'theteller'),
+                    'type' => 'text',
+                    'description' => __('SMS API Password given to Merchant by Theteller SMPP', 'theteller')
+                ),
+
+'smpp_sender' => array(
+                    'title' => __('SMS SenderID', 'theteller'),
+                    'type' => 'text',
+                    'description' => __('Sender ID must be registred on Theteller SMPP. 11 characters Maximum'),
+                ));
+
+
 
         }
 
         public function admin_options() {
             echo '<h3>' . __('Theteller Payment Gateway', 'theteller') . '</h3>';
-            echo '<p>' . __('Theteller is most popular payment gateway for online shopping in Ghana') . '</p>';
+            echo '<p>' . __('With a simple configuration, you can accept payments from cards to mobile money with Theteller.') . '</p>';
             echo '<table class="form-table">';
             // Generate the HTML For the settings form.
             $this->generate_settings_html();
@@ -158,6 +215,9 @@ $apikey = $this->apikey;
 $order = new WC_Order($order_id);
 $amount = $order->total;
 $customer_email = $order->billing_email;
+$currency = $this->currency;
+$channel = $this->channel;
+
 
 
 $redirect_url = $woocommerce->cart->get_checkout_url().'?order_id='.$order_id.'&theteller_response';
@@ -194,7 +254,57 @@ $key_options = $merchantid.$transaction_id.$amount.$customer_email;
 $theteller_wc_hash_key = hash('sha512', $key_options);
 WC()->session->set('theteller_wc_hash_key', $theteller_wc_hash_key);
 //die($theteller_wc_hash_key);
-          
+
+//checking for currency GHS/USD/EUR...
+if($currency == 0) 
+{
+    $currency = "GHS";
+}
+
+
+elseif ($currency == 1) 
+{
+    $currency = "USD";
+}  
+
+elseif ($currency == 2) 
+{
+    $currency = "EUR";
+}  
+
+elseif ($currency == 3) 
+{
+    $currency = "GBP";
+} 
+
+
+ else 
+{
+    $currency = "GHS";
+} 
+
+
+//checking for channel card/momo/both...
+if($channel == 0) 
+{
+    $channel = "card";
+}
+
+elseif ($channel == 1)
+{
+    $channel = "momo";
+}  
+
+elseif ($channel == 2) 
+{
+    $channel =  "both";
+}        
+
+else 
+{
+    $channel = "both";
+} 
+
 
 //Payload to send to API...
 $postdata = array(
@@ -205,6 +315,8 @@ $postdata = array(
     'amount'  => $minor,
     'email' =>$customer_email,
     'redirect_url'  => $redirect_url,
+    'currency' => $currency,
+    'payment_method'=> $channel
 )),
     'timeout' => '60',
     'redirection' => '5',
@@ -226,6 +338,7 @@ $response = wp_remote_post($api_base_url, $postdata);
 
 //Decoding response...
 $response_data = json_decode($response['body'], true);
+
 
 
 //Checking if error
@@ -309,6 +422,7 @@ if ( is_wp_error($response) ) {
 
 
   }//end of send_request_to_theteller_api()...
+
 
 
         //Processing payment...
@@ -429,7 +543,63 @@ if ( is_wp_error($response) ) {
                                 $order->payment_complete();
                                 $order->update_status('completed');
                                 $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: '.$reason.'');
-                               
+                                
+                                //Getting customer phonenumber from billing info..
+                                $phonenumber = $order->billing_phone;
+
+                                //Remove first zero of number...
+                                $phonenumber = ltrim($phonenumber, '0');
+
+                                //Casting number into integer...
+                                $phonenumber = (int)$phonenumber;
+
+                                //Customer International number...
+                                $customer_phonenumber = $order->billing_postcode.$phonenumber; 
+
+                                 //Check if Theteller SMPP is enabled...
+                                if ($this->settings['theteller_smpp'] == "yes") {
+                               // $this->send_theteller_sms($customer_phonenumber);
+
+    //Sending single SMS...
+    $api_base_url = "https://smpp.theteller.net/send/single";
+
+    //Getting settings..
+     $smpp_user =    $this->smpp_user;
+     $smpp_password = $this->smpp_password ;
+     $smpp_sender =  $this->smpp_sender;
+     $merchantname = $this->merchant_name;
+
+    //Payload to send to API...
+$postdata = array(
+    'body' => json_encode(array(
+    "sender"  => $smpp_sender,
+    'phonenumber'  => $customer_phonenumber,
+    'message'  => "Payment  to ".$merchantname." was successful.Transaction ID :  ".WC()->session->get('theteller_wc_transaction_id')."",
+)),
+    'timeout' => '60',
+    'redirection' => '5',
+    'httpversion' => '1.0',
+    'blocking' => true,
+    'sslverify' => true,
+    'headers' => array( 
+    'Content-Type' => 'application/json',
+    'cache-control' => 'no-cache',
+    'Expect' => '',
+    'Authorization' => 'Basic '.base64_encode($smpp_user.':'.$smpp_password).'' 
+  ), 
+    
+);
+
+
+//Making Request...
+wp_remote_post($api_base_url, $postdata);
+
+//Decoding response...
+// $response_data = json_decode($response['body'], true);
+// die($response_data);
+
+}
+                                //empty cart redirect to success page... 
                                 $woocommerce->cart->empty_cart();
                                 $redirect_url = $this->get_return_url($order);
                                 $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
@@ -442,7 +612,7 @@ if ( is_wp_error($response) ) {
 
                          if($code =="900")
                         {   
-                             
+                                //$order->payment_complete();
                                 $order->update_status('failed');
                                 $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: Transaction declined');
                                
@@ -465,7 +635,7 @@ if ( is_wp_error($response) ) {
                                     the transaction has been declined.";
                                 $message_type = "error";
                                
-                                
+                                //$order->payment_complete();
                                 $order->update_status('failed');
                                 $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: Transaction declined');
                                
@@ -484,7 +654,7 @@ if ( is_wp_error($response) ) {
                                    
         $message = "Thank you for shopping with us. However, the transaction failed.";
         $message_type = "error";
-                                   
+                              // $order->payment_complete();
                                 $order->update_status('failed');
                                 $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: '.$reason.'');
                                
@@ -525,7 +695,6 @@ if ( is_wp_error($response) ) {
             
         }
         
-
       
 
         static function woocommerce_add_theteller_gateway($methods) {
