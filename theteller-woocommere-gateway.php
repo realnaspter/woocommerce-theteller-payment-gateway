@@ -343,9 +343,9 @@ $response_data = json_decode($response['body'], true);
 
 //Checking if error
 if ( is_wp_error($response) ) {
-        $error_message = $response->get_error_message();
+        $error_message = "An error occured while processing request";
         echo $error_message;
-    }
+          }
   
 //Getting Response...
      if (!isset($response_data['code'])) {
