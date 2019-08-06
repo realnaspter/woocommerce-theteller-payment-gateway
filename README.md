@@ -2,12 +2,12 @@
 Contributors: Marc D Christopher AHOURE
 Tags: woocommerce, payment gateway, payment gateways, Theteller,PaySwitch, payswitch ghana pay, PaySwitch pay,Theteller.net, online payment, gh online payment,buy sel connect,ghana pay,pay gh,pay ghana,payment hub,ghana payment hub,pay direct, mobile wallet payment, mobile money payment,tigo cash payment, airtel money payment, send money,gh pay,gh payment platform, ghana payment platform,woocommerce plugin, Theteller WooCommerce Payment Gateway
 Author URI: https://theteller.net
-Author: Marc D Christopher AHOURE
-Requires at least: 2.3
-Tested up to: 5.2
-Stable tag: 1.0
-Version: 2.0 
-Requires PHP: 5.5 or Higher
+Author: Marc Donald Christopher AHOURE
+Requires at least: 3.0
+Tested up to: 5.2.2
+Stable tag: 2.0
+Version: 3.0 
+Requires PHP: 5.6 or Higher
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -28,7 +28,7 @@ With Theteller Woocommerce Payment Gateway plugin, you will be able to accept th
 •	Prevent Fraud – Confirm payment from Theteller reporting portal before approving on woocommerce.
 •	Risk Management – Theteller is PCI Level 1 compliant (geek for secure as hell). So all card data is stored securely.
 
-•	Free Help – Theteller provides free technical and account support to merchants, as well as access to online documentation and user guides (ask@payswitch.com.gh).
+•	Free Help – Theteller provides free technical and account support to merchants, as well as access to online documentation and user guides (theteller@payswitch.com.gh).
 
 
 
@@ -90,17 +90,18 @@ Theteller SMS allows you to send SMS to your customer as receipt after successfu
 •	SMS SenderID  – This control what user sees as sender. Must be register before. 11 characters Maximum.
 
 
+
 == Frequently Asked Questions ==
-= Do I need a merchant account before I can use the Theteller WooCommerce gateway plugin?=
-•	Yes. In order to use this plugin you will need a merchant account with Theteller. For more information, please visit: https://Theteller.net If you already have a merchant account set up, chances are the gateway will integrate with it. Send an email: ask@payswitch.com.gh or call our office: +233 0244332134 to find out more.
+= Do I need a merchant account before I can use the Theteller WooCommerce gateway plugin?
+•	Yes. In order to use this plugin you will need a merchant account with Theteller. For more information, please visit: https://Theteller.net If you already have a merchant account set up, chances are the gateway will integrate with it. Send an email: theteller@payswitch.com.gh or call our office: +233 0244332134 to find out more.
 
 = What is the cost for the gateway plugin? =
 •	This plugin is a FREE download with no annual fee or maintenance fee charge. However, transactions involving Visa MasterCard , Union Pay and Tela has a service charge. This is per merchant agreement with Theteller.
 
 
 == Contributors & Developers ==
-Developed by: Marc D Christopher AHOURE
-Email: dmcorporation2014@gmail.com
+Developed by: Marc Donald Christopher AHOURE
+Email: mahoure@payswitch.com.gh
 
 = Reason for creating this plugin: =
 E-commerce is fast-becoming the convenient go-to in sales strategy for most sellers. Reason being cost-saving, wide reach and relative ease of management of clients and staff. Ghana, a developing nation has caught on to this recent rave. In doing this, Ghanaian e-commerce owners have also realized the ease, convenience and efficiency of using such a strategy with many choosing WordPress WooCommerce as their preferred E-Commerce system. However, the only inhibiting factor is the absence of a payment facilitation tool to complete the online buying experience. 
