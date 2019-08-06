@@ -4,9 +4,9 @@
 Plugin Name: WooCommerce PaySwitch Theteller Payment Gateway
 Plugin URI: https://wordpress.org/plugins/woocommerce-theteller-payment-gateway/
 Description: PaySwitch Theteller Payment gateway for woocommerce
-Version: 2.0
-Author: Marc D Christopher AHOURE
-Author URI: https://perfectplusventures.com
+Version: 3.0
+Author: Marc Donald Christopher AHOURE
+Author URI: https://theteller.net
 */
 
 if (!defined('ABSPATH')) {
@@ -47,7 +47,7 @@ function woocommerce_theteller_init() {
             $this->currency = $this->settings['currency'];
             $this->channel = $this->settings['channel'];
 
-
+            
             //Checking for live environment..
             if ($this->settings['go_live'] == "yes") {
                 $this->api_base_url = 'https://prod.theteller.net/checkout/initiate';
@@ -59,24 +59,24 @@ function woocommerce_theteller_init() {
             $this->msg['message'] = "";
             $this->msg['class'] = "";
 
-            if (isset($_REQUEST["theteller-response-notice"])) {
+            if (isset($_REQUEST["theteller-response-notice"]) || $_REQUEST["theteller-response-notice"] != null ) {
                 wc_add_notice($_REQUEST["theteller-response-notice"], "error");
             }
 
-            if (isset($_REQUEST["theteller-error-notice"])) {
+            if (isset($_REQUEST["theteller-error-notice"]) || $_REQUEST["theteller-error-notice"] != null ) {
                 wc_add_notice($_REQUEST["theteller-error-notice"], "error");
             }
 
 
-            if (isset($_REQUEST["order_id"]) && isset($_REQUEST["transaction_id"])) {
+            if (isset($_REQUEST["order_id"]) || $_REQUEST["order_id"] != null && isset($_REQUEST["transaction_id"]) || $_REQUEST["transaction_id"] != null) {
                 
                //Check Theteller API Response...
                 $this->check_theteller_response();
 
             }
 
-            //check for at least Woocommerce 2.0...
-            if (version_compare(WOOCOMMERCE_VERSION, '2.0.0', '>=')) {
+            //check for at least Woocommerce 3.0...
+            if (version_compare(WOOCOMMERCE_VERSION, '3.0.0', '>=')) {
                 add_action('woocommerce_update_options_payment_gateways_' . $this->id, array(&$this, 'process_admin_options'));
             } else {
                 add_action('woocommerce_update_options_payment_gateways', array(&$this, 'process_admin_options'));
@@ -189,6 +189,7 @@ function woocommerce_theteller_init() {
             echo '<h3>' . __('Theteller Payment Gateway', 'theteller') . '</h3>';
             echo '<p>' . __('With a simple configuration, you can accept payments from cards to mobile money with Theteller.') . '</p>';
             echo '<table class="form-table">';
+
             // Generate the HTML For the settings form.
             $this->generate_settings_html();
             echo '</table>';
@@ -213,14 +214,15 @@ $api_base_url = $this->api_base_url;
 $apiuser = $this->apiuser; 
 $apikey = $this->apikey; 
 $order = new WC_Order($order_id);
-$amount = $order->total;
-$customer_email = $order->billing_email;
+$amount = $order->get_total();
+$customer_email = $order->get_billing_email();        
 $currency = $this->currency;
 $channel = $this->channel;
 
 
+//Redirect url..
+$redirect_url = wc_get_checkout_url().'?order_id='.$order_id.'&theteller_response';
 
-$redirect_url = $woocommerce->cart->get_checkout_url().'?order_id='.$order_id.'&theteller_response';
 
          //Convert amount to minor float..
          $minor='';
@@ -253,7 +255,6 @@ for($i = 1;$i <= 12; $i++){
 $key_options = $merchantid.$transaction_id.$amount.$customer_email;
 $theteller_wc_hash_key = hash('sha512', $key_options);
 WC()->session->set('theteller_wc_hash_key', $theteller_wc_hash_key);
-//die($theteller_wc_hash_key);
 
 //checking for currency GHS/USD/EUR...
 if($currency == 0) 
@@ -340,12 +341,11 @@ $response = wp_remote_post($api_base_url, $postdata);
 $response_data = json_decode($response['body'], true);
 
 
-
 //Checking if error
 if ( is_wp_error($response) ) {
         $error_message = "An error occured while processing request";
         echo $error_message;
-          }
+    }
   
 //Getting Response...
      if (!isset($response_data['code'])) {
@@ -409,7 +409,7 @@ if ( is_wp_error($response) ) {
 
       //Redirect to checkout page...
         return $checkout_url;
-        exit;
+        exit();
 
     }
 
@@ -468,6 +468,7 @@ if ( is_wp_error($response) ) {
         //Getting Theteller Api response...
         function check_theteller_response() {
             global $woocommerce;
+
             $theteller = isset($_REQUEST["theteller_response"]) ? $_REQUEST["theteller_response"] : "";
             $order_id = isset($_REQUEST["order_id"]) ? $_REQUEST["order_id"] : "";
             $code = isset($_REQUEST["code"]) ? $_REQUEST["code"] : "";
@@ -475,7 +476,7 @@ if ( is_wp_error($response) ) {
             $transaction_id = isset($_REQUEST["transaction_id"]) ? $_REQUEST["transaction_id"] : "";
             $reason = isset($_REQUEST["reason"]) ? $_REQUEST["reason"] : "";
 
-            if($theteller != "")
+            if($theteller != "" || $theteller != null)
             {
                  die("<h2 style=color:red>Not a valid request !</h2>");
             }
@@ -483,7 +484,8 @@ if ( is_wp_error($response) ) {
 
             $wc_order_id = WC()->session->get('theteller_wc_oder_id');
             $order = new WC_Order($wc_order_id);
-             if($order->status == 'pending' || $order->status == 'processing'){
+
+             if($order->get_status() == 'pending' || $order->get_status() == 'processing'){
 
             
             if ($order_id !='' && $code !=''  && $transaction_id !='') {
@@ -556,9 +558,8 @@ if ( is_wp_error($response) ) {
                                 //Customer International number...
                                 $customer_phonenumber = $order->billing_postcode.$phonenumber; 
 
-                                 //Check if Theteller SMPP is enabled...
-                                if ($this->settings['theteller_smpp'] == "yes") {
-                               // $this->send_theteller_sms($customer_phonenumber);
+         //Check if Theteller SMPP is enabled...
+             if ($this->settings['theteller_smpp'] == "yes") {
 
     //Sending single SMS...
     $api_base_url = "https://smpp.theteller.net/send/single";
@@ -596,10 +597,10 @@ wp_remote_post($api_base_url, $postdata);
 
 //Decoding response...
 // $response_data = json_decode($response['body'], true);
-// die($response_data);
 
-}
-                                //empty cart redirect to success page... 
+} // end of if SMPP is enabled...
+
+                              //empty cart redirect to success page... 
                                 $woocommerce->cart->empty_cart();
                                 $redirect_url = $this->get_return_url($order);
                                 $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
@@ -607,10 +608,10 @@ wp_remote_post($api_base_url, $postdata);
                         WC()->session->__unset('theteller_wc_order_id');
                         WC()->session->__unset('theteller_wc_transaction_id');
                         wp_redirect($redirect_url);
-                        exit;
+                        exit();
                         }
 
-                         if($code =="900")
+                         if($code == "900")
                         {   
                                 //$order->payment_complete();
                                 $order->update_status('failed');
@@ -623,7 +624,7 @@ wp_remote_post($api_base_url, $postdata);
                         WC()->session->__unset('theteller_wc_order_id');
                         WC()->session->__unset('theteller_wc_transaction_id');
                         wp_redirect($redirect_url);
-                        exit;
+                        exit();
                                 
 
                         }
@@ -646,35 +647,36 @@ wp_remote_post($api_base_url, $postdata);
                         WC()->session->__unset('theteller_wc_order_id');
                         WC()->session->__unset('theteller_wc_transaction_id');
                         wp_redirect($redirect_url);
-                        exit;
+                        exit();
 
                         }
 
-                        else {
+                        else 
+            {
                                    
         $message = "Thank you for shopping with us. However, the transaction failed.";
         $message_type = "error";
-                              // $order->payment_complete();
-                                $order->update_status('failed');
-                                $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: '.$reason.'');
+                              
+        $order->update_status('failed');
+        $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: '.$reason.'');
                                
-                                $woocommerce->cart->empty_cart();
-                                $redirect_url = $this->get_return_url($order);
-                                $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
-                                 WC()->session->__unset('theteller_wc_hash_key');
-                        WC()->session->__unset('theteller_wc_order_id');
-                        WC()->session->__unset('theteller_wc_transaction_id');
-                        wp_redirect($redirect_url);
-                        exit;
+        $woocommerce->cart->empty_cart();
+        $redirect_url = $this->get_return_url($order);
+        $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
+        WC()->session->__unset('theteller_wc_hash_key');
+        WC()->session->__unset('theteller_wc_order_id');
+        WC()->session->__unset('theteller_wc_transaction_id');
+        wp_redirect($redirect_url);
+        exit();
 
-                                }
+        }
 
                       
                         $notification_message = array(
                             'message' => $message,
                             'message_type' => $message_type
                         );
-                        if (version_compare(WOOCOMMERCE_VERSION, "2.2") >= 0) {
+                        if (version_compare(WOOCOMMERCE_VERSION, "3.0") >= 0) {
                             add_post_meta($wc_order_id, '_theteller_hash', $theteller_wc_hash_key, true);
                         }
                         update_post_meta($wc_order_id, '_theteller_wc_message', $notification_message);
@@ -684,7 +686,7 @@ wp_remote_post($api_base_url, $postdata);
                         $order->add_order_note('Error: ' . $e->getMessage());
                         $redirect_url = $order->get_cancel_order_url();
                         wp_redirect($redirect_url);
-                        exit;
+                        exit();
                     }
               
                 }
@@ -715,4 +717,5 @@ wp_remote_post($api_base_url, $postdata);
     
     add_filter("plugin_action_links_$plugin", array('WC_Theteller', 'woocommerce_add_theteller_settings_link'));
     add_filter('woocommerce_payment_gateways', array('WC_Theteller', 'woocommerce_add_theteller_gateway'));
+
 }
