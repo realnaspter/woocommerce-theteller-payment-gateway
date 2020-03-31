@@ -4,9 +4,9 @@ Tags: woocommerce, payment gateway, payment gateways, Theteller,PaySwitch, paysw
 Author URI: https://theteller.net
 Author: Marc Donald Christopher AHOURE
 Requires at least: 3.0
-Tested up to: 5.3
+Tested up to: 5.3.2
 Stable tag: 2.0
-Version: 3.0.1 
+Version: 3.1.0 
 Requires PHP: 5.6 or Higher
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -19,14 +19,14 @@ To get Theteller merchant account visit Theteller website by clicking <a href="h
 With Theteller Woocommerce Payment Gateway plugin, you will be able to accept the following payment methods in your shop:
 •	MasterCard/Visa/Union Pay/ Tela Card
 •	Mobile Wallet(MTN, TIGO-AIRTEL, VODAFONE)
-
+•	Ghana Money (G-Money)
 
 
 == PLUGIN FEATURES ==
-•	Accept payment via MasterCard, Visa,Union Pay , Tela , mobile wallets (MTN, TIGO-AIRTEL, VODAFONE).
+•	Accept payment via MasterCard, Visa,Union Pay , Tela , mobile wallets (MTN, TIGO-AIRTEL, VODAFONE, G-Money).
 •	Seamless integration into the WooCommerce checkout page.
 •	Prevent Fraud – Confirm payment from Theteller reporting portal before approving on woocommerce.
-•	Risk Management – Theteller is PCI Level 1 compliant (geek for secure as hell). So all card data is stored securely.
+•	Risk Management – Theteller is PCI Level 1 compliant (geek for secure as hell). 
 
 •	Free Help – Theteller provides free technical and account support to merchants, as well as access to online documentation and user guides (theteller@payswitch.com.gh).
 
