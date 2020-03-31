@@ -4,7 +4,7 @@
 Plugin Name: WooCommerce PaySwitch Theteller Payment Gateway
 Plugin URI: https://wordpress.org/plugins/woocommerce-theteller-payment-gateway/
 Description: PaySwitch Theteller Payment gateway for woocommerce
-Version: 3.0
+Version: 3.1
 Author: Marc Donald Christopher AHOURE
 Author URI: https://theteller.net
 */
@@ -469,39 +469,28 @@ if ( is_wp_error($response) ) {
         function check_theteller_response() {
             global $woocommerce;
 
-            $theteller = isset($_REQUEST["theteller_response"]) ? $_REQUEST["theteller_response"] : "";
+          
+
             $order_id = isset($_REQUEST["order_id"]) ? $_REQUEST["order_id"] : "";
             $code = isset($_REQUEST["code"]) ? $_REQUEST["code"] : "";
             $status = isset($_REQUEST["status"]) ? $_REQUEST["status"] : "";
             $transaction_id = isset($_REQUEST["transaction_id"]) ? $_REQUEST["transaction_id"] : "";
             $reason = isset($_REQUEST["reason"]) ? $_REQUEST["reason"] : "";
 
-            if($theteller != "" || $theteller != null)
-            {
-                 die("<h2 style=color:red>Not a valid request !</h2>");
-            }
-
-
+            
             $wc_order_id = WC()->session->get('theteller_wc_oder_id');
             $order = new WC_Order($wc_order_id);
 
-             if($order->get_status() == 'pending' || $order->get_status() == 'processing'){
-
-            
-            if ($order_id !='' && $code !=''  && $transaction_id !='') {
-
-                 
-               
-                $wc_transaction_id = WC()->session->get('theteller_wc_transaction_id');
+              $wc_transaction_id = WC()->session->get('theteller_wc_transaction_id');
                 $theteller_wc_hash_key = WC()->session->get('theteller_wc_hash_key');
+
 
                 if(empty($theteller_wc_hash_key))
                 {
                     die("<h2 style=color:red>Ooups ! something went wrong </h2>");
                 }
                 
-                
-                 if($order_id != $wc_order_id)
+                   if($order_id != $wc_order_id)
             {
 
                 
@@ -529,8 +518,14 @@ if ( is_wp_error($response) ) {
                 
             }
 
-                if ($wc_order_id != '' && $wc_transaction_id !='') {
+            
 
+             if($order->get_status() == 'pending' || $order->get_status() == 'processing'){
+
+            
+            if (!empty($order_id)  && !empty($code) && !empty($transaction_id)) {
+
+                  
                     try {
                                              
                         if($code =="000")
@@ -600,7 +595,7 @@ wp_remote_post($api_base_url, $postdata);
 
 } // end of if SMPP is enabled...
 
-                              //empty cart redirect to success page... 
+                              //empty cart redirect to store page... 
                                 $woocommerce->cart->empty_cart();
                                 $redirect_url = $this->get_return_url($order);
                                 $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
@@ -609,39 +604,22 @@ wp_remote_post($api_base_url, $postdata);
                         WC()->session->__unset('theteller_wc_transaction_id');
                         wp_redirect($redirect_url);
                         exit();
-                        }
 
-                         if($code == "900")
-                        {   
-                                //$order->payment_complete();
-                                $order->update_status('failed');
-                                $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: Transaction declined');
-                               
-                              
-                                 $redirect_url = $woocommerce->cart->get_checkout_url();
-                                $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
-                                 WC()->session->__unset('theteller_wc_hash_key');
-                        WC()->session->__unset('theteller_wc_order_id');
-                        WC()->session->__unset('theteller_wc_transaction_id');
-                        wp_redirect($redirect_url);
-                        exit();
-                                
+                        } // if success
 
-                        }
+                        else
+            {
 
-                        if($code =="100")
-                        {   
-                           
-                            $message = "Thank you for shopping with us. However, 
+                $message = "Thank you for shopping with us. However, 
                                     the transaction has been declined.";
                                 $message_type = "error";
-                               
-                                //$order->payment_complete();
+
+                 $order->payment_complete();
                                 $order->update_status('failed');
-                                $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: Transaction declined');
-                               
-                              
-                                 $redirect_url = $woocommerce->cart->get_checkout_url();
+                                $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: '.$reason.'');
+
+                                 $woocommerce->cart->empty_cart();
+                                $redirect_url = $this->get_return_url($order);
                                 $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
                                  WC()->session->__unset('theteller_wc_hash_key');
                         WC()->session->__unset('theteller_wc_order_id');
@@ -649,53 +627,38 @@ wp_remote_post($api_base_url, $postdata);
                         wp_redirect($redirect_url);
                         exit();
 
-                        }
+            } // end of else..
 
-                        else 
-            {
-                                   
-        $message = "Thank you for shopping with us. However, the transaction failed.";
-        $message_type = "error";
-                              
-        $order->update_status('failed');
-        $order->add_order_note('Theteller status code : '.$code.'<br/>Transaction ID  ' . $wc_transaction_id.'<br /> Reason: '.$reason.'');
-                               
-        $woocommerce->cart->empty_cart();
-        $redirect_url = $this->get_return_url($order);
-        $customer = trim($order->billing_last_name . " " . $order->billing_first_name);
-        WC()->session->__unset('theteller_wc_hash_key');
-        WC()->session->__unset('theteller_wc_order_id');
-        WC()->session->__unset('theteller_wc_transaction_id');
-        wp_redirect($redirect_url);
-        exit();
-
-        }
+                        
 
                       
                         $notification_message = array(
                             'message' => $message,
                             'message_type' => $message_type
                         );
+
                         if (version_compare(WOOCOMMERCE_VERSION, "3.0") >= 0) {
                             add_post_meta($wc_order_id, '_theteller_hash', $theteller_wc_hash_key, true);
                         }
                         update_post_meta($wc_order_id, '_theteller_wc_message', $notification_message);
 
                        
-                    } catch (Exception $e) {
+                    } // end of try...
+
+                    catch (Exception $e) {
+
                         $order->add_order_note('Error: ' . $e->getMessage());
                         $redirect_url = $order->get_cancel_order_url();
                         wp_redirect($redirect_url);
                         exit();
-                    }
+
+                    } // end of catch..
               
                 }
-            }
 
-               
-            }
+             }
             
-        }
+        } // end of the check_theteller_response...
         
       
 
