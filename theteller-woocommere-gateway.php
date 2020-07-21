@@ -337,16 +337,21 @@ $postdata = array(
 //Making Request...
 $response = wp_remote_post($api_base_url, $postdata);
 
-//Decoding response...
-$response_data = json_decode($response['body'], true);
-
 
 //Checking if error
-if ( is_wp_error($response) ) {
-        $error_message = "An error occured while processing request";
-        echo $error_message;
+if (!is_wp_error($response)) {
+
+        //Decoding response...
+$response_data = json_decode($response['body'], true);
+
     }
-  
+
+  else
+  {
+
+    $error_message = "An error occured while processing request";
+        echo $error_message;
+  }
 //Getting Response...
      if (!isset($response_data['code'])) {
     $response_data['code'] = null;
