@@ -323,7 +323,7 @@ $postdata = array(
     'redirection' => '5',
     'httpversion' => '1.0',
     'blocking' => true,
-    'sslverify' => true,
+    'sslverify' => false,
     'headers' => array( 
     'Content-Type' => 'application/json',
     'cache-control' => 'no-cache',
@@ -338,11 +338,13 @@ $postdata = array(
 $response = wp_remote_post($api_base_url, $postdata);
 
 
+//die(print_r($response));
+
 //Checking if error
 if (!is_wp_error($response)) {
 
         //Decoding response...
-$response_data = json_decode($response['body'], true);
+  $response_data = json_decode($response['body'], true);
 
     }
 
@@ -352,6 +354,8 @@ $response_data = json_decode($response['body'], true);
     $error_message = "An error occured while processing request";
         echo $error_message;
   }
+
+  
 //Getting Response...
      if (!isset($response_data['code'])) {
     $response_data['code'] = null;
