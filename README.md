@@ -6,7 +6,7 @@ Author: Marc Donald Christopher AHOURE
 Requires at least: 3.0
 Tested up to: 5.3.2
 Stable tag: 2.0
-Version: 3.1.0 
+Version: 3.2.0 
 Requires PHP: 5.6 or Higher
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
