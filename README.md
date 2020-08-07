@@ -4,9 +4,9 @@ Tags: woocommerce, payment gateway, payment gateways, Theteller,PaySwitch, paysw
 Author URI: https://theteller.net
 Author: Marc Donald Christopher AHOURE
 Requires at least: 3.0
-Tested up to: 5.3.2
-Stable tag: 2.0
-Version: 3.2.0 
+Tested up to: 5.5
+Stable tag: 3.0
+Version: 3.3.0 
 Requires PHP: 5.6 or Higher
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
