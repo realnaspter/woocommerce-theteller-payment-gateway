@@ -4,7 +4,7 @@
 Plugin Name: WooCommerce PaySwitch Theteller Payment Gateway
 Plugin URI: https://wordpress.org/plugins/woocommerce-theteller-payment-gateway/
 Description: PaySwitch Theteller Payment gateway for woocommerce
-Version: 3.3
+Version: 3.4
 Author: Marc Donald Christopher AHOURE
 Author URI: https://theteller.net
 Requires at least: 3.0
