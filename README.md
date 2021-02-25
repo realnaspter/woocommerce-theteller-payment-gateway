@@ -6,7 +6,7 @@ Author: Marc Donald Christopher AHOURE
 Requires at least: 3.0
 Tested up to: 5.6
 Stable tag: 3.0
-Version: 3.4.0 
+Version: 3.5.0 
 WC requires at least: 3.0
 WC tested up to: 5.0
 Requires PHP: 5.6 or Higher
