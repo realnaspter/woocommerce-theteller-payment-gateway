@@ -4,7 +4,7 @@
 Plugin Name: WooCommerce PaySwitch Theteller Payment Gateway
 Plugin URI: https://wordpress.org/plugins/woocommerce-theteller-payment-gateway/
 Description: PaySwitch Theteller Payment gateway for woocommerce
-Version: 3.4
+Version: 3.5
 Author: Marc Donald Christopher AHOURE
 Author URI: https://theteller.net
 Requires at least: 3.0
@@ -79,7 +79,6 @@ function woocommerce_theteller_init() {
         $this->smpp_sender = $this->settings['smpp_sender'];
         $this->currency = $this->settings['currency'];
         $this->channel = $this->settings['channel'];
-        self::$log_enabled    = $this->debug;
 
 
             //Checking for live environment..
@@ -87,22 +86,24 @@ function woocommerce_theteller_init() {
             $this->api_base_url = 'https://checkout.theteller.net/initiate';
 
         } else {
-         $this->api_base_url = 'https://test.theteller.net/checkout/initiate';
-     }
+           $this->api_base_url = 'https://test.theteller.net/checkout/initiate';
+       }
 
-     $this->msg['message'] = "";
-     $this->msg['class'] = "";
+       $this->msg['message'] = "";
+       $this->msg['class'] = "";
 
-     if (isset($_REQUEST["theteller-response-notice"]) || $_REQUEST["theteller-response-notice"] != null ) {
-        wc_add_notice($_REQUEST["theteller-response-notice"], "error");
+
+
+       if (isset($_GET["theteller-response-notice"]) || isset($_GET["theteller-response-notice"]) != null ) {
+        wc_add_notice(isset($_GET["theteller-response-notice"]), "error");
     }
 
-    if (isset($_REQUEST["theteller-error-notice"]) || $_REQUEST["theteller-error-notice"] != null ) {
-        wc_add_notice($_REQUEST["theteller-error-notice"], "error");
+    if (isset($_GET["theteller-error-notice"]) || isset($_GET["theteller-error-notice"]) != null ) {
+        wc_add_notice(isset($_GET["theteller-error-notice"]), "error");
     }
 
 
-    if (isset($_REQUEST["order_id"]) || $_REQUEST["order_id"] != null && isset($_REQUEST["transaction_id"]) || $_REQUEST["transaction_id"] != null) {
+    if (isset($_GET["order_id"]) || isset($_GET["order_id"]) != null && isset($_GET["transaction_id"]) || isset($_GET["transaction_id"]) != null) {
 
                //Check Theteller API Response...
         $this->check_theteller_response();
@@ -318,21 +319,21 @@ function send_request_to_theteller_api($order_id) {
 
 //checking for channel card/momo/both...
 switch ($channel) {
- case 0:
- $channel = "card";
- break;
+   case 0:
+   $channel = "card";
+   break;
 
- case 1:
- $channel = "momo";
- break;
+   case 1:
+   $channel = "momo";
+   break;
 
- case 2:
- $channel = "both";
- break;
+   case 2:
+   $channel = "both";
+   break;
 
- default:
- $channel = "both";
- break;
+   default:
+   $channel = "both";
+   break;
 
 } // end of switch channel...
 
@@ -367,20 +368,20 @@ $postdata = array(
 //Making Request...
 $response = wp_remote_post($api_base_url, $postdata);
 
+//Checking for error..
+if( is_wp_error( $response ) ) {
 
-//Checking if error
-if (!is_wp_error($response)) {
-
-        //Decoding response...
-  $response_data = json_decode($response['body'], true);
-
+    $this->log( 'API Request Failed: '. $response->get_error_message(), 'error' );
+    $error_message = "An error occured while processing request";
+    echo $error_message;
 }
 
 else
 {
-    $this->log( 'API Request Failed: ' . $response->get_error_message(), 'error' );
-    $error_message = "An error occured while processing request";
-    echo $error_message;
+    //Getting response body...
+    $reponse_body = wp_remote_retrieve_body( $response );
+    $response_data = json_decode( $reponse_body, true );
+
 }
 
 
@@ -508,66 +509,66 @@ function check_theteller_response() {
     global $woocommerce;
 
             //Checking for Order ID...
-    if (!isset($_REQUEST["order_id"])) {
+    if (!isset($_GET["order_id"])) {
 
-        $_REQUEST["order_id"] = null;
+        $_GET["order_id"] = null;
 
     }
 
     else{
 
-        $order_id = $_REQUEST["order_id"];
+        $order_id = $_GET["order_id"];
     }
 
                  //Checking for Response code...
-    if (!isset($_REQUEST["code"])) {
+    if (!isset($_GET["code"])) {
 
-        $_REQUEST["code"] = null;
+        $_GET["code"] = null;
 
     }
 
     else{
 
-        $code = $_REQUEST["code"];
+        $code = $_GET["code"];
     }
 
 
                  //Checking for Response status...
-    if (!isset($_REQUEST["status"])) {
+    if (!isset($_GET["status"])) {
 
-        $_REQUEST["status"] = null;
+        $_GET["status"] = null;
 
     }
 
     else{
 
-        $status = $_REQUEST["status"];
+        $status = $_GET["status"];
     }
 
 
                 //Checking for Response Transaction ID...
-    if (!isset($_REQUEST["status"])) {
+    if (!isset($_GET["status"])) {
 
-        $_REQUEST["transaction_id"] = null;
+        $_GET["transaction_id"] = null;
 
     }
 
     else{
 
-        $transaction_id = $_REQUEST["transaction_id"];
+        $transaction_id = $_GET["transaction_id"];
     }
 
 
                  //Checking for Response Transaction Reason...
-    if (!isset($_REQUEST["reason"])) {
+    if (!isset($_GET["reason"])) {
 
-        $_REQUEST["reason"] = null;
+        $_GET["reason"] = null;
 
     }
 
     else{
 
-        $reason = $_REQUEST["reason"];
+        $reason = $_GET["reason"];
     }
 
 
@@ -591,162 +592,177 @@ function check_theteller_response() {
     {
 
 
-     $message = "Code 0001 : Data has been tampered . 
-     Order ID is ".$wc_order_id."";
+       $message = "Code 0001 : Data has been tampered . 
+       Order ID is ".$wc_order_id."";
 
-     $message_type = "error"; 
+       $message_type = "error"; 
 
-     $this->log( 'Order ID does not exist in session', 'error' );
+       $this->log( 'Order ID does not exist in session', 'error' );
 
-     $order->add_order_note($message);
+       $order->add_order_note($message);
 
-     $redirect_url = $order->get_cancel_order_url();
+       $redirect_url = $order->get_cancel_order_url();
 
-     wp_redirect($redirect_url);
+       wp_redirect($redirect_url);
 
-     exit();
+       exit();
 
- }
+   }
 
- if(empty($wc_transaction_id) || $wc_transaction_id == null || $wc_transaction_id == "")
- {   
+   if(empty($wc_transaction_id) || $wc_transaction_id == null || $wc_transaction_id == "")
+   {   
 
 
-     $message = "Code 0002 : Data has been tampered . 
-     Order ID is ".$wc_order_id."";
+       $message = "Code 0002 : Data has been tampered . 
+       Order ID is ".$wc_order_id."";
 
-     $message_type = "error";
+       $message_type = "error";
 
-     $this->log( 'Transaction ID does not exist in session ', 'error' );
+       $this->log( 'Transaction ID does not exist in session ', 'error' );
 
-     $order->add_order_note($message);
+       $order->add_order_note($message);
 
-     $redirect_url = $order->get_cancel_order_url();
+       $redirect_url = $order->get_cancel_order_url();
 
-     wp_redirect($redirect_url);
+       wp_redirect($redirect_url);
 
-     exit();
+       exit();
 
- }
+   }
 
 
    // if the order is pending or in process...
- if($order->get_status() == 'pending' || $order->get_status() == 'processing'){
+   if($order->get_status() == 'pending' || $order->get_status() == 'processing'){
 
 
-  try {
+      try {
 
         //Checking Transaction Status from Theteller...
 
         //Status check base url...
-   if ($this->settings['go_live'] == "yes") {
+         if ($this->settings['go_live'] == "yes") {
 
-    $status_check_base_url = "https://prod.theteller.net/v1.1/users/transactions/".$wc_transaction_id."/status";
+            $status_check_base_url = "https://prod.theteller.net/v1.1/users/transactions/".$wc_transaction_id."/status";
 
-} else {
+        } else {
 
- $status_check_base_url = "https://test.theteller.net/v1.1/users/transactions/".$wc_transaction_id."/status";
-}
+           $status_check_base_url = "https://test.theteller.net/v1.1/users/transactions/".$wc_transaction_id."/status";
+       }
 
 
 
     //Getting settings..
-$merchant_id = $this->settings['merchant_id'];
-$merchantname = $this->settings['merchant_name'];
+       $merchant_id = $this->settings['merchant_id'];
+       $merchantname = $this->settings['merchant_name'];
 
 
 //Sending Request...
-$response = wp_remote_get( $status_check_base_url ,
-   array( 'timeout' => 60, 'redirection' => '5', 
-    'httpversion' => '1.0', 'blocking' => true,
-    'sslverify' => true,
-    'headers' => array( 'Merchant-Id' => $merchant_id) ));
+       $response = wp_remote_get( $status_check_base_url ,
+         array( 'timeout' => 60, 'redirection' => '5', 
+            'httpversion' => '1.0', 'blocking' => true,
+            'sslverify' => false,
+            'headers' => array( 'Merchant-Id' => $merchant_id) ));
 
-//Decoding response...
-$response_data = json_decode($response['body'], true);
+//Checking no error..
+       if( is_wp_error( $response ) ) {
+
+        $this->log( 'API Request Failed: '. $response->get_error_message(), 'error' );
+        $error_message = "An error occured while processing request";
+        echo $error_message;
+    }
+
+    else
+    {
+
+    //Getting response body...
+        $reponse_body = wp_remote_retrieve_body( $response );
+        $response_data = json_decode( $reponse_body, true );
+
+    }
+
+//die(print_r($response_data));
+
+    if (!isset($response_data['status'])) {
+     $transaction_status = null;
+ }
+
+ else
+ {
+     $transaction_status = $response_data['status'];
+ }
+
+ if (!isset($response_data['code'])) {
+     $transaction_code = null;
+ }
+
+ else
+ {
+     $transaction_code = $response_data['code'];
+ }
+
+ if (!isset($response_data['reason'])) {
+     $transaction_reason = null;
+ }
+
+ else
+ {
+     $transaction_reason = $response_data['reason'];
+ }
 
 
-if (!isset($response_data['status'])) {
-   $transaction_status = null;
+ if (!isset($response_data['transaction_id'])) {
+   $transaction_transaction_id = null;
 }
 
 else
 {
-   $transaction_status = $response_data['status'];
-}
-
-if (!isset($response_data['code'])) {
-   $transaction_code = null;
-}
-
-else
-{
-   $transaction_code = $response_data['code'];
-}
-
-if (!isset($response_data['reason'])) {
-   $transaction_reason = null;
-}
-
-else
-{
-   $transaction_reason = $response_data['reason'];
-}
-
-
-if (!isset($response_data['transaction_id'])) {
- $transaction_transaction_id = null;
-}
-
-else
-{
- $transaction_transaction_id = $response_data['transaction_id'];
+   $transaction_transaction_id = $response_data['transaction_id'];
 }
 
 if (!isset($response_data['amount'])) {
- $transaction_amount = null;
+   $transaction_amount = null;
 }
 
 else
 {
- $transaction_amount = $response_data['amount'];
+   $transaction_amount = $response_data['amount'];
 }
 
 
 if (!isset($response_data['currency'])) {
- $transaction_currency = null;
+   $transaction_currency = null;
 }
 
 else
 {
- $transaction_currency = $response_data['currency'];
+   $transaction_currency = $response_data['currency'];
 }
 
 
 if($transaction_status == "approved" || $transaction_status == "Approved" && $transaction_code == "000")
 {
 
-   $message = "Thank you for shopping with us. 
-   Your transaction was successful, payment has been received. 
-   You order is currently being processed. 
-   Your Order ID is ".$wc_order_id."";
+ $message = "Thank you for shopping with us. 
+ Your transaction was successful, payment has been received. 
+ You order is currently being processed. 
+ Your Order ID is ".$wc_order_id."";
 
-   $message_type = "success";
+ $message_type = "success";
 
-   $order->payment_complete();
-   $order->update_status('completed');
-   $order->add_order_note('Theteller Responses : <br /> 
-       Code : '.$transaction_code.'<br/>
-       Status : '.$transaction_status.'<br/>
-       Amount : '.$transaction_amount.'<br/>
-       Currency : '.$transaction_currency.'<br/>
-       Transaction ID  ' . $transaction_transaction_id.' <br /> 
-       Reason: '.$transaction_reason.'');
+ $order->payment_complete();
+ $order->update_status('completed');
+ $order->add_order_note('Theteller Responses : <br /> 
+     Code : '.$transaction_code.'<br/>
+     Status : '.$transaction_status.'<br/>
+     Amount : '.$transaction_amount.'<br/>
+     Currency : '.$transaction_currency.'<br/>
+     Transaction ID  ' . $transaction_transaction_id.' <br /> 
+     Reason: '.$transaction_reason.'');
 
 
 
          //Check if Theteller SMPP is enabled...
-   if ($this->settings['theteller_smpp'] == "yes") {
+ if ($this->settings['theteller_smpp'] == "yes") {
 
 //Getting customer phonenumber from billing info..
     $phonenumber = $order->billing_phone;
@@ -818,12 +834,12 @@ exit();
         $order->payment_complete();
         $order->update_status('failed');
         $order->add_order_note('Theteller Responses : <br /> 
-           Code : '.$transaction_code.'<br/>
-           Status : '.$transaction_status.'<br/>
-           Amount : '.$transaction_amount.'<br/>
-           Currency : '.$transaction_currency.'<br/>
-           Transaction ID  ' . $transaction_transaction_id.' <br /> 
-           Reason: '.$transaction_reason.'');
+         Code : '.$transaction_code.'<br/>
+         Status : '.$transaction_status.'<br/>
+         Amount : '.$transaction_amount.'<br/>
+         Currency : '.$transaction_currency.'<br/>
+         Transaction ID  ' . $transaction_transaction_id.' <br /> 
+         Reason: '.$transaction_reason.'');
 
 
         $woocommerce->cart->empty_cart();
@@ -850,7 +866,7 @@ exit();
 
 
 
-   
+    
 
 
                     } // end of try...
@@ -875,9 +891,9 @@ exit();
              else
              {
 
-                 $this->log( 'Order does not exist or already proccessed ', 'error' );
+               $this->log( 'Order does not exist or already proccessed ', 'error' );
 
-                 die("<h2 style=color:red>Order has been proccessed or expired. Try another one </h2>");
+               die("<h2 style=color:red>Order has been proccessed or expired. Try another one </h2>");
 
              } // end of else if $order->get_status() == pending...
 
@@ -921,7 +937,7 @@ exit();
 $plugin = plugin_basename(__FILE__);
 
 
-add_filter("plugin_action_links_$plugin", array('WC_Theteller', 'woocommerce_add_theteller_settings_link'));
+add_filter("plugin_action_links_".$plugin."", array('WC_Theteller', 'woocommerce_add_theteller_settings_link'));
 add_filter('woocommerce_payment_gateways', array('WC_Theteller', 'woocommerce_add_theteller_gateway'));
 
 } 
